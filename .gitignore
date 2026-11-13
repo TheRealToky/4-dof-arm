@@ -6,6 +6,8 @@ __pycache__/
 # captured data
 calib/pairs/
 calib/*.npz
+calib/*.pdf
+calib/*.png
 eval/sessions/
 eval/results/
 models/
