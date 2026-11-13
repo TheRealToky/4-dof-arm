@@ -9,6 +9,16 @@
     { "role": "joint1_pan",  "invert": false, "offset_deg": 0, "min_deg": 0, "max_deg": 180, "home_deg": 90, "max_speed_dps": 180 },
     { "role": "joint1_tilt", "invert": false, "offset_deg": 0, "min_deg": 0, "max_deg": 180, "home_deg": 90, "max_speed_dps": 180 }
   ],
+  "cameras": {
+    "mono": 0,
+    "width": 640,
+    "height": 480
+  },
+  "mapping": {
+    "arm": "right",
+    "gains": [1.0, 1.0, 1.0, 1.0],
+    "hold_s": 1.0
+  },
   "filter": {
     "min_cutoff_hz": 1.5,
     "beta": 0.02
