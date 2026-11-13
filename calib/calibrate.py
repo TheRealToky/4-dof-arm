@@ -66,11 +66,17 @@ def rectify(k1, d1, k2, d2, r, t, size_left):
     return r1, r2, p1, p2, q, rect_size
 
 
-def calibrate_stereo(det_left, det_right, corners_3d, size_left, size_right):
+def calibrate_stereo(det_left, det_right, corners_3d, size_left, size_right, _swapped=False):
     """Full calibration from per-pair detections. Returns a dict of results.
 
     det_left / det_right: lists of (corners Nx2, ids N), same length, where
     index i of each is the same moment in time.
+
+    If the camera given as "left" turns out to be the right-hand one (as
+    seen from behind the cameras), the calibration is redone with the two
+    roles exchanged and the result is marked "swapped". Everything in the
+    result (K1, size_left, ...) then describes the true left camera, and
+    ordered() puts incoming frames in the matching order.
     """
     rms_l, k1, d1, n_l = calibrate_single(det_left, corners_3d, size_left)
     rms_r, k2, d2, n_r = calibrate_single(det_right, corners_3d, size_right)
@@ -88,6 +94,12 @@ def calibrate_stereo(det_left, det_right, corners_3d, size_left, size_right):
     rms_s, k1, d1, k2, d2, r, t, _, _ = cv2.stereoCalibrate(
         obj, img_l, img_r, k1, d1, k2, d2, tuple(size_left),
         flags=cv2.CALIB_FIX_INTRINSIC)
+
+    # The right camera must sit at negative x in the left camera's frame.
+    if float(np.asarray(t).ravel()[0]) > 0:
+        if _swapped:
+            raise ValueError("could not determine which camera is on the left")
+        return calibrate_stereo(det_right, det_left, corners_3d, size_right, size_left, _swapped=True)
 
     r1, r2, p1, p2, q, rect_size = rectify(k1, d1, k2, d2, r, t, size_left)
 
@@ -107,7 +119,13 @@ def calibrate_stereo(det_left, det_right, corners_3d, size_left, size_right):
         "rms_left": rms_l, "rms_right": rms_r, "rms_stereo": rms_s,
         "row_error_px": row_error, "baseline_m": float(np.linalg.norm(t)),
         "views_left": n_l, "views_right": n_r, "pairs_used": len(obj),
+        "swapped": bool(_swapped),
     }
+
+
+def ordered(calib, left, right):
+    """Puts a (config-left, config-right) pair into true (left, right) order."""
+    return (right, left) if bool(calib.get("swapped", False)) else (left, right)
 
 
 def rectify_maps(calib):
@@ -137,6 +155,10 @@ def report(c):
         f"Row alignment : {c['row_error_px']:.3f} px mean after rectification  ({verdict(c['row_error_px'], 0.5, 1.0)})",
         f"Baseline      : {c['baseline_m'] * 100:.2f} cm  (compare with a ruler, lens centre to lens centre)",
     ]
+    if bool(c.get("swapped", False)):
+        lines.append('Note          : the camera set as "left" in config.json is physically the right-hand one. '
+                     "This is handled automatically; nothing to change. "
+                     '"Left camera" above means the true left one.')
     return "\n".join(lines)
 
 
@@ -172,8 +194,9 @@ def main():
 
     # Visual check: rectified pair with horizontal lines.
     (m1l, m2l), (m1r, m2r) = rectify_maps(calib)
-    rl = cv2.remap(first[0], m1l, m2l, cv2.INTER_LINEAR)
-    rr = cv2.remap(first[1], m1r, m2r, cv2.INTER_LINEAR)
+    true_left, true_right = ordered(calib, *first)
+    rl = cv2.remap(true_left, m1l, m2l, cv2.INTER_LINEAR)
+    rr = cv2.remap(true_right, m1r, m2r, cv2.INTER_LINEAR)
     check = np.hstack([rl, rr])
     for y in range(20, check.shape[0], 40):
         cv2.line(check, (0, y), (check.shape[1], y), (0, 255, 0), 1)

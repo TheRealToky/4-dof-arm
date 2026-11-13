@@ -11,17 +11,24 @@
   ],
   "cameras": {
     "mono": 0,
-    "left": 0,
-    "right": 1,
+    "left": 2,
+    "right": 0,
     "width": 640,
     "height": 480
   },
   "board": {
     "squares_x": 7,
     "squares_y": 5,
-    "square_mm": 35.0,
-    "marker_mm": 26.0,
+    "square_mm": 32.5,
+    "marker_mm": 24.0,
     "dictionary": "DICT_5X5_50"
+  },
+  "stereo": {
+    "num_disparities": 192,
+    "block_size": 9,
+    "patch": 9,
+    "scale": 0.5,
+    "equalise": true
   },
   "mapping": {
     "arm": "right",
