@@ -79,6 +79,7 @@ class StereoSource:
     depth="disparity":   track in the left view, read each landmark's depth
                          from the dense disparity map.
     depth="triangulate": track in both views and intersect matching landmarks.
+                         Shows the right view; "disparity" shows the left.
     """
 
     def __init__(self, config, depth_method="disparity"):
@@ -118,17 +119,21 @@ class StereoSource:
         result = self.tracker.process(rect_left, timestamp_ms)
         disp = self.depth.disparity(rect_left, rect_right)
 
+        # The picture on screen: triangulation tracks both views, so it can show
+        # the right-hand camera. The disparity map only lines up with the left.
         if self.method == "triangulate":
             result_right = self.tracker_right.process(rect_right, timestamp_ms)
             points = points_from_triangulation(self.depth, result, result_right)
+            view, shown = rect_right, result_right
         else:
             points = points_from_disparity(self.depth, disp, result)
+            view, shown = rect_left, result
 
-        draw(rect_left, result)
-        obs = Observation(view=rect_left, seen=result.arm_ok, panel=self.depth.colourise(disp))
+        draw(view, shown)
+        obs = Observation(view=view, seen=result.arm_ok, panel=self.depth.colourise(disp))
         for name, p in points.items():
-            if p is not None and name in result.px and name != "hand_wrist":
-                obs.labels[result.px[name]] = f"{p[2] * 100:.0f} cm"
+            if p is not None and name in shown.px and name != "hand_wrist":
+                obs.labels[shown.px[name]] = f"{p[2] * 100:.0f} cm"
 
         if result.arm_ok:
             self.frames += 1
