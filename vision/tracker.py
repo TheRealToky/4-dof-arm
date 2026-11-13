@@ -25,7 +25,7 @@ POSE_IDX = {
     "right": {"shoulder": 12, "elbow": 14, "wrist": 16},
 }
 # Hand landmark indices.
-HAND_IDX = {"hand_wrist": 0, "index_mcp": 5, "middle_mcp": 9, "pinky_mcp": 17}
+HAND_IDX = {"hand_wrist": 0, "index_mcp": 5, "index_tip": 8, "middle_mcp": 9, "pinky_mcp": 17}
 
 MIN_VISIBILITY = 0.5
 # A detected hand belongs to the arm only if its wrist is this close to the
@@ -40,6 +40,8 @@ class TrackResult:
     px: dict = field(default_factory=dict)      # name -> (x, y) in pixels
     forearm: np.ndarray | None = None   # elbow -> wrist, MediaPipe's own 3D estimate (m)
     hand: np.ndarray | None = None      # wrist -> middle knuckle, MediaPipe's own 3D estimate (m)
+    hand_px_all: np.ndarray | None = None       # all 21 hand landmarks, pixels (21, 2)
+    hand_world_all: np.ndarray | None = None    # all 21, MediaPipe's metric hand model (21, 3)
 
 
 class ArmTracker:
@@ -101,6 +103,8 @@ class ArmTracker:
                     result.px[name] = (lms[i].x * w, lms[i].y * h)
                 a, b = world[HAND_IDX["hand_wrist"]], world[HAND_IDX["middle_mcp"]]
                 result.hand = np.array([b.x - a.x, b.y - a.y, b.z - a.z])
+                result.hand_px_all = np.array([[l.x * w, l.y * h] for l in lms])
+                result.hand_world_all = np.array([[l.x, l.y, l.z] for l in world])
                 result.hand_ok = True
 
         return result

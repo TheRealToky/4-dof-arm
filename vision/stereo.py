@@ -139,19 +139,19 @@ class StereoDepth:
         return self.point_from_disparity_value(px_left[0], px_left[1], px_left[0] - px_right[0])
 
 
-def points_from_disparity(depth: StereoDepth, disp, result) -> dict:
+def points_from_disparity(depth: StereoDepth, disp, result, names=POINT_NAMES) -> dict:
     """Landmark name -> XYZ (or None), sampling the disparity map at each landmark."""
     out = {}
-    for name in POINT_NAMES:
+    for name in names:
         p = result.px.get(name)
         out[name] = depth.point_at(disp, p[0], p[1]) if p is not None else None
     return out
 
 
-def points_from_triangulation(depth: StereoDepth, result_left, result_right) -> dict:
+def points_from_triangulation(depth: StereoDepth, result_left, result_right, names=POINT_NAMES) -> dict:
     """Landmark name -> XYZ (or None), matching landmarks tracked in both views."""
     return {name: depth.triangulate(result_left.px.get(name), result_right.px.get(name))
-            for name in POINT_NAMES}
+            for name in names}
 
 
 def arm_vectors(points: dict):
