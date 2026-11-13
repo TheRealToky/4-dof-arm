@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# captured data
+calib/pairs/
+calib/*.npz
+eval/sessions/
+eval/results/
+models/

@@ -1,0 +1,7 @@
+pyserial
+pygame
+numpy
+opencv-contrib-python
+mediapipe
+matplotlib
+pytest
