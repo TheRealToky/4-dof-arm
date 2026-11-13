@@ -11,3 +11,5 @@ calib/*.png
 eval/sessions/
 eval/results/
 models/
+
+.id
